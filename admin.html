@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack - Kênh Quản Trị Toàn Diện</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="index.html">🏋️‍♂️ FitTrack Admin</a>
+            <a href="index.html" class="btn btn-outline-light btn-sm">Xem trang chủ</a>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm p-4 position-sticky" style="top: 20px;">
+                    <h4 id="form-title" class="fw-bold mb-3 text-primary">Thêm Buổi Tập Mới</h4>
+                    <form id="workout-form">
+                        <input type="hidden" id="workout-id">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Tên buổi tập</label>
+                            <input type="text" id="name" class="form-control" placeholder="VD: Đẩy ngực, Chạy bộ...">
+                            <div class="text-danger small mt-1" id="error-name"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Lượng Calo tiêu hao</label>
+                            <input type="number" id="calories" class="form-control" placeholder="Phải lớn hơn 0">
+                            <div class="text-danger small mt-1" id="error-calories"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nhóm cơ chính</label>
+                            <select id="muscleGroup" class="form-select">
+                                <option value="">-- Chọn nhóm cơ --</option>
+                                <option value="Cardio">Cardio (Tim mạch)</option>
+                                <option value="Ngực">Ngực (Chest)</option>
+                                <option value="Chân">Chân (Legs)</option>
+                                <option value="Vai">Vai (Shoulders)</option>
+                                <option value="Lưng/Xô">Lưng / Xô (Back)</option>
+                            </select>
+                            <div class="text-danger small mt-1" id="error-muscleGroup"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Link hình ảnh minh họa</label>
+                            <input type="text" id="image" class="form-control" placeholder="Điền URL ảnh (https://...)">
+                            <div class="text-danger small mt-1" id="error-image"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Ghi chú (Không bắt buộc)</label>
+                            <textarea id="notes" class="form-control" rows="2" placeholder="Số sets, reps hoặc thời gian..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" id="btn-submit" class="btn btn-primary w-100 fw-bold py-2">💾 Lưu Buổi Tập</button>
+                            <button type="button" id="btn-cancel" class="btn btn-secondary fw-bold py-2" style="display: none;" onclick="resetFormState()">Hủy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm p-4">
+                    <h4 class="fw-bold mb-3 text-secondary">Danh Sách Quản Lý</h4>
+                    
+                    <div id="admin-loading" class="text-center my-4">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0" id="admin-table" style="display: none;">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Ảnh</th>
+                                    <th>Tên bài</th>
+                                    <th>Nhóm cơ</th>
+                                    <th>Calo</th>
+                                    <th class="text-center">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="workout-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        const form = document.getElementById("workout-form");
+        const tableBody = document.getElementById("workout-table-body");
+        const loading = document.getElementById("admin-loading");
+        const table = document.getElementById("admin-table");
+        
+        const formTitle = document.getElementById("form-title");
+        const btnSubmit = document.getElementById("btn-submit");
+        const btnCancel = document.getElementById("btn-cancel");
+        const workoutIdInput = document.getElementById("workout-id");
+
+        let allWorkouts = []; // Biến cục bộ lưu trữ danh sách để đổ dữ liệu khi sửa nhanh hơn
+
+        // Hàm hiển thị danh sách bài tập lên bảng
+        function renderTable() {
+            loading.style.display = "block";
+            table.style.display = "none";
+            tableBody.innerHTML = "";
+
+            getWorkouts()
+                .then(data => {
+                    allWorkouts = data; // Lưu vào biến mảng chung
+                    loading.style.display = "none";
+                    table.style.display = "table";
+
+                    data.forEach(workout => {
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td><img src="${workout.image}" style="width: 50px; height: 50px; object-fit: cover;" class="rounded"></td>
+                            <td class="fw-bold">${workout.name}</td>
+                            <td><span class="badge bg-secondary">${workout.muscleGroup}</span></td>
+                            <td class="text-success fw-bold">${workout.calories} kcal</td>
+                            <td class="text-center">
+                                <button class="btn btn-warning btn-sm me-1 fw-semibold" onclick="editWorkoutState('${workout.id}')">✏️ Sửa</button>
+                                <button class="btn btn-danger btn-sm fw-semibold" onclick="handleDelete('${workout.id}')">❌ Xóa</button>
+                            </td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                })
+                .catch(err => alert(err.message));
+        }
+
+        // Chuyển Form sang trạng thái SỬA bài viết
+        function editWorkoutState(id) {
+            const workout = allWorkouts.find(item => item.id === id);
+            if (!workout) return;
+
+            // Đổ dữ liệu cũ vào các ô Input
+            workoutIdInput.value = workout.id;
+            document.getElementById("name").value = workout.name;
+            document.getElementById("calories").value = workout.calories;
+            document.getElementById("muscleGroup").value = workout.muscleGroup;
+            document.getElementById("image").value = workout.image;
+            document.getElementById("notes").value = workout.notes || "";
+
+            // Thay đổi giao diện Form thành chế độ Sửa
+            formTitle.innerText = "Chỉnh Sửa Buổi Tập";
+            formTitle.className = "fw-bold mb-3 text-warning";
+            btnSubmit.innerText = "🔄 Cập Nhật Ngay";
+            btnSubmit.className = "btn btn-warning w-100 fw-bold py-2";
+            btnCancel.style.display = "inline-block";
+        }
+
+        // Đưa Form quay về trạng thái THÊM MỚI ban đầu
+        function resetFormState() {
+            form.reset();
+            workoutIdInput.value = "";
+            formTitle.innerText = "Thêm Buổi Tập Mới";
+            formTitle.className = "fw-bold mb-3 text-primary";
+            btnSubmit.innerText = "💾 Lưu Buổi Tập";
+            btnSubmit.className = "btn btn-primary w-100 fw-bold py-2";
+            btnCancel.style.display = "none";
+        }
+
+        // Xử lý Xóa buổi tập
+        function handleDelete(id) {
+            if (confirm("Bạn có chắc chắn muốn xóa buổi tập này không?")) {
+                deleteWorkout(id)
+                    .then(() => {
+                        alert("Xóa thành công!");
+                        resetFormState();
+                        renderTable();
+                    })
+                    .catch(err => alert(err.message));
+            }
+        }
+
+        // Xử lý gửi Form (Cả Thêm lẫn Sửa)
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+
+            const id = workoutIdInput.value;
+            const name = document.getElementById("name").value.trim();
+            const calories = document.getElementById("calories").value.trim();
+            const muscleGroup = document.getElementById("muscleGroup").value;
+            const image = document.getElementById("image").value.trim();
+            const notes = document.getElementById("notes").value.trim();
+
+            let isValid = true;
+
+            // Reset lỗi
+            document.getElementById("error-name").innerText = "";
+            document.getElementById("error-calories").innerText = "";
+            document.getElementById("error-muscleGroup").innerText = "";
+            document.getElementById("error-image").innerText = "";
+
+            if (name === "") { document.getElementById("error-name").innerText = "Tên không được để trống!"; isValid = false; }
+            if (calories === "" || Number(calories) <= 0) { document.getElementById("error-calories").innerText = "Lượng calo phải lớn hơn 0!"; isValid = false; }
+            if (muscleGroup === "") { document.getElementById("error-muscleGroup").innerText = "Vui lòng chọn nhóm cơ!"; isValid = false; }
+            if (image === "" || !image.startsWith("http")) { document.getElementById("error-image").innerText = "Link ảnh bắt đầu bằng http/https!"; isValid = false; }
+
+            if (isValid) {
+                const workoutData = { name, calories: Number(calories), muscleGroup, image, notes };
+
+                if (id) {
+                    // Nếu có ID -> Đang ở chế độ SỬA (PUT)
+                    updateWorkout(id, workoutData)
+                        .then(() => {
+                            alert("Cập nhật buổi tập thành công!");
+                            resetFormState();
+                            renderTable();
+                        })
+                        .catch(err => alert(err.message));
+                } else {
+                    // Nếu không có ID -> Đang ở chế độ THÊM MỚI (POST)
+                    createWorkout(workoutData)
+                        .then(() => {
+                            alert("Thêm buổi tập thành công!");
+                            form.reset();
+                            renderTable();
+                        })
+                        .catch(err => alert(err.message));
+                }
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", renderTable);
+    </script>
+</body>
+</html>

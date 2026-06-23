@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitTrack - Nhật ký tập luyện</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">🏋️‍♂️ FitTrack</a>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <h2 class="text-center mb-2 fw-bold text-uppercase text-primary">Danh Sách Buổi Tập Luyện</h2>
+        
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-4 text-center">
+                <div class="card bg-warning text-dark border-0 shadow-sm p-3">
+                    <h5 class="mb-1 fw-bold">🔥 Tổng Calo Tiêu Thụ</h5>
+                    <h3 id="total-calories" class="fw-bold m-0">0 Calo</h3>
+                </div>
+            </div>
+        </div>
+        
+        <div id="loading" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Đang tải danh sách bài tập...</p>
+        </div>
+
+        <div id="workout-list" class="row g-4" style="display: none;">
+            </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const workoutList = document.getElementById("workout-list");
+            const loading = document.getElementById("loading");
+            const totalCaloriesEl = document.getElementById("total-calories");
+
+            getWorkouts()
+                .then(data => {
+                    loading.style.display = "none";
+                    workoutList.style.display = "flex";
+
+                    let totalCalories = 0; // Biến dùng để cộng dồn calo
+
+                    data.forEach(workout => {
+                        // Cộng dồn calo của từng bài tập vào tổng (ép kiểu sang Number để tránh lỗi cộng chuỗi)
+                        totalCalories += Number(workout.calories || 0);
+
+                        const cardHtml = `
+                            <div class="col-12 col-md-6 col-lg-4">
+                                <div class="card h-100 shadow-sm border-0">
+                                    <img src="${workout.image}" class="card-img-top" alt="${workout.name}" style="height: 200px; object-fit: cover;">
+                                    <div class="card-body">
+                                        <h5 class="card-title fw-bold text-truncate">${workout.name}</h5>
+                                        <p class="card-text text-muted mb-2 text-truncate">💡 Ghi chú: ${workout.notes || 'Không có ghi chú'}</p>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="badge bg-success p-2">🔥 ${workout.calories} Calo</span>
+                                            <span class="badge bg-secondary p-2">💪 ${workout.muscleGroup}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        workoutList.innerHTML += cardHtml;
+                    });
+
+                    // Thao tác DOM: Hiển thị số tổng calo vừa tính được lên giao diện
+                    totalCaloriesEl.innerText = totalCalories + " Calo";
+                })
+                .catch(error => {
+                    loading.innerHTML = `<div class="alert alert-danger mx-auto" style="max-width: 500px;">⚠️ Lỗi: ${error.message}. Vui lòng thử lại sau!</div>`;
+                });
+        });
+    </script>
+</body>
+</html>
