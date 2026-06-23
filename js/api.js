@@ -1,16 +1,13 @@
-// Cấu hình đường dẫn API chuẩn
-const API_URL = "https://6a3a7bba917c7b14c74d967f.mockapi.io/workouts";
+// Đường dẫn API chính xác theo dự án mới nhất của bạn
+const API_URL = "https://6a3a7bba917c7b14c74d967e.mockapi.io/workouts";
 
-// 1. Hàm lấy danh sách tất cả các buổi tập (GET)
-// Sử dụng mode: 'cors' để tránh lỗi chặn kết nối từ trình duyệt
+// 1. Hàm lấy danh sách (GET)
 async function getWorkouts() {
     try {
         const response = await fetch(API_URL, {
             method: 'GET',
-            mode: 'cors',
             headers: { 'Content-Type': 'application/json' }
         });
-        
         if (!response.ok) throw new Error("Không thể tải dữ liệu");
         return await response.json();
     } catch (error) {
@@ -19,7 +16,7 @@ async function getWorkouts() {
     }
 }
 
-// 2. Hàm thêm mới một buổi tập (POST)
+// 2. Hàm thêm mới (POST)
 async function createWorkout(workoutData) {
     const response = await fetch(API_URL, {
         method: "POST",
@@ -30,7 +27,7 @@ async function createWorkout(workoutData) {
     return await response.json();
 }
 
-// 3. Hàm xóa một buổi tập (DELETE)
+// 3. Hàm xóa (DELETE)
 async function deleteWorkout(id) {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE"
@@ -39,7 +36,7 @@ async function deleteWorkout(id) {
     return await response.json();
 }
 
-// 4. Hàm cập nhật dữ liệu (PUT)
+// 4. Hàm cập nhật (PUT)
 async function updateWorkout(id, updatedData) {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
@@ -49,6 +46,3 @@ async function updateWorkout(id, updatedData) {
     if (!response.ok) throw new Error("Không thể cập nhật");
     return await response.json();
 }
-
-// Gợi ý: Gọi hàm này để hiển thị dữ liệu ra màn hình
-// getWorkouts().then(data => console.log(data)).catch(err => alert(err.message));
