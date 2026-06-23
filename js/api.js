@@ -1,6 +1,5 @@
 // Đường dẫn API chính xác theo dự án mới nhất của bạn
 const API_URL = "https://6a3a7bba917c7b14c74d967e.mockapi.io/workouts";
-
 // 1. Hàm lấy danh sách (GET)
 async function getWorkouts() {
     try {
